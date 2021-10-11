@@ -24,14 +24,18 @@ int main(int argc, char *argv[]) {
 	// ********************************************************************
 	// CHECKING THE INPUT FILES AND READING THEM IN                 *******
 	// ********************************************************************
+	if (argc > 4)
+		throw runtime_error("Too many arguments given!");
+
+	if (argc < 3)
+		throw runtime_error("Too few arguments given!");
+
 	for(int i=1;i<argc;++i) {
 		string s=argv[i];
 		if(s.find("-q") != string::npos || s.find("--quarternion") != string::npos)
 			Quaternion=true;
 	}
-	if(argc > 4)
-	  throw runtime_error("To many arguments given!");
-
+	
 	ifstream input(argv[1]);
 	if(!input)
 	  throw runtime_error(string ("File could not be found: ") + argv[1]);
