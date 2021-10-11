@@ -12,6 +12,7 @@ The quaterion-based algorithm (https://doi.org/10.1002/jcc.20110) is implemented
 `rmsd example.xyz example_two.xyz`
 
 `rmsd example.xyz example_two.xyz -q`
+
 `rmsd example.xyz example_two.xyz --quaternion`
 
 `-q` and `--quaternion` are equivalent and trigger the quaternion algorithm for calculating the transformation matrix.
