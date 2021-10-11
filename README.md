@@ -1,5 +1,5 @@
 # rmsd
-Calculates the rmsd between two geometries given as xyz file.
+Calculates the RMSD between two geometries given as xyz file.
 
 ## Description
 
