@@ -3,7 +3,7 @@ Calculates the RMSD between two geometries given as xyz file.
 
 ## Description
 
-This command line tool calculates the RMSD-value (in Angstrom) between two structures given as .xyz files. The result is printed to screen. In addition, a .xyz file with the aligned geometry of the structure given first is written to file.
+This command line tool calculates the RMSD-value (in Angstrom) between two structures given as .xyz files. The result is printed to screen. In addition, the coordinates of the aligned geometry are written to file.
 The default algorithm for calculating the transformation matrix for molecule alignment is the Kabsch algorithm (https://en.wikipedia.org/wiki/Kabsch_algorithm).
 The quaterion-based algorithm (https://doi.org/10.1002/jcc.20110) is implemented as well and can be invoked from the command line. The program is written in C++ and uses OpenMP for parallelization.
 
