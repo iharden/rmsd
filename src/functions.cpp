@@ -118,7 +118,7 @@ tuple<double, double, double> get_centerofmass(const vector<Atom>& atoms, const 
 	return make_tuple(rx, ry, rz);
 }
 
-std::vector<Atom> quaternion(const std::vector<Atom>& sys_one, const std::vector<Atom> sys_two) {
+std::vector<Atom> quaternion(const std::vector<Atom>& sys_one, const std::vector<Atom>& sys_two) {
 
 	// ********************************************************************
 	// DEFINING AND WRITING CORRELATION MATRIX                      *******
@@ -218,7 +218,7 @@ std::vector<Atom> quaternion(const std::vector<Atom>& sys_one, const std::vector
 	return sys_one_aligned;
 }
 
-std::vector<Atom> Kabsch(const std::vector<Atom>& sys_one, const std::vector<Atom> sys_two) {
+std::vector<Atom> Kabsch(const std::vector<Atom>& sys_one, const std::vector<Atom>& sys_two) {
 
 	// ********************************************************************
 	// SET UP H-MATRIX												*******
@@ -265,7 +265,7 @@ std::vector<Atom> Kabsch(const std::vector<Atom>& sys_one, const std::vector<Ato
 	return sys_one_aligned;
 }
 
-double calc_rmsd(const std::vector<Atom>& sys_one_aligned, const std::vector<Atom> sys_two) {
+double calc_rmsd(const std::vector<Atom>& sys_one_aligned, const std::vector<Atom>& sys_two) {
 
 	int natoms=sys_one_aligned.size();
 	vector<double> delta(natoms,0.0);

@@ -24,6 +24,7 @@ int main(int argc, char *argv[]) {
 	// ********************************************************************
 	// CHECKING THE INPUT FILES AND READING THEM IN                 *******
 	// ********************************************************************
+
 	if (argc > 4)
 		throw runtime_error("Too many arguments given!");
 
@@ -65,7 +66,7 @@ int main(int argc, char *argv[]) {
 	inputzwei.close();
 
 	// ********************************************************************
-	// CHECK ATOM ORDER				                              *******
+	// CHECK ATOM ORDER				                                *******
 	// ********************************************************************
 
 	if(sys_one.size() != sys_two.size() || sys_one.size() != natoms || sys_two.size() != natoms)
@@ -136,8 +137,3 @@ int main(int argc, char *argv[]) {
 	}
 	output.close();
 }
-
-
-
-
-
