@@ -19,7 +19,7 @@ The quaternion-based algorithm (https://doi.org/10.1002/jcc.20110) is implemente
 
 ## Requirements
 
-Precompiled binaries for Ubuntu and Windows 10 are avaible and can be used right away. When compiling the source code from scratch, the third-party Eigen package (https://eigen.tuxfamily.org/index.php?title=Main_Page) needs to be downloaded. Eigen is header-only and therefore should be easy to include.
+Precompiled binaries for Ubuntu and Windows 10 are available and can be used right away. When compiling the source code from scratch, the third-party Eigen package (https://eigen.tuxfamily.org/index.php?title=Main_Page) needs to be downloaded. Eigen is header-only and therefore should be easy to include.
 
 ## Contributor
 
