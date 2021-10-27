@@ -6,8 +6,6 @@
 #include<fstream>
 #include<cmath>
 #include<vector>
-#include<tuple>
-#include<omp.h>
 #include<exception>
 #include<unordered_map>
 #include<algorithm>
@@ -90,24 +88,15 @@ int main(int argc, char *argv[]) {
 
 	vector<double> mass = get_masses(sys_one);
 
-	tuple<double, double, double> com_one = get_centerofmass(sys_one, mass);
-	tuple<double, double, double> com_two = get_centerofmass(sys_two, mass);
+	array<double,3> com_one = get_centerofmass(sys_one, mass);
+	array<double,3> com_two = get_centerofmass(sys_two, mass);
 
 
 	// ********************************************************************
 	// SHIFTING CENTER OF MASS TO THE ORIGIN                        *******
 	// ********************************************************************
 
-	#pragma omp parallel for
-	for(int i=0;i<natoms;++i) {
-		sys_one[i].pos[0] -= get<0>(com_one);
-		sys_one[i].pos[1] -= get<1>(com_one);
-		sys_one[i].pos[2] -= get<2>(com_one);
-
-		sys_two[i].pos[0] -= get<0>(com_two);
-		sys_two[i].pos[1] -= get<1>(com_two);
-		sys_two[i].pos[2] -= get<2>(com_two);
-	}
+	shift_to_com(sys_one, sys_two, com_one, com_two);
 
 	// ********************************************************************
 	// GET ALIGNED SYSTEM FROM COORDINATE TRANSFORMATION            *******
@@ -137,3 +126,10 @@ int main(int argc, char *argv[]) {
 	}
 	output.close();
 }
+
+
+
+
+
+
+

@@ -27,7 +27,8 @@
 
 double get_time(std::chrono::time_point<std::chrono::high_resolution_clock>  start, std::chrono::time_point<std::chrono::high_resolution_clock> finish);
 std::vector<double> get_masses(const std::vector<Atom>& atoms);
-std::tuple<double, double, double> get_centerofmass(const std::vector<Atom>& atoms, const std::vector<double>& mass);
+std::array<double, 3> get_centerofmass(const std::vector<Atom>& atoms, const std::vector<double>& mass);
+void shift_to_com(std::vector<Atom>& sys_one, std::vector<Atom>& sys_two, const std::array<double,3>& com_one, const std::array<double,3>& com_two);
 
 std::vector<Atom> quaternion(const std::vector<Atom>& sys_one, const std::vector<Atom>& sys_two);
 std::vector<Atom> Kabsch(const std::vector<Atom>& sys_one, const std::vector<Atom>& sys_two);

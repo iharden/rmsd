@@ -12,6 +12,8 @@
 #include "functions.hpp"
 
 using namespace std;
+using Matrix3d = Eigen::Matrix<double,3,3,Eigen::RowMajor>;
+using Matrix4d = Eigen::Matrix<double,4,4,Eigen::RowMajor>;
 
 template <typename T>
 int sgn(T val) {
@@ -92,20 +94,16 @@ vector<double> get_masses(const vector<Atom>& atoms) {
 	return mass;
 }
 
-tuple<double, double, double> get_centerofmass(const vector<Atom>& atoms, const vector<double>& mass) {
+array<double,3> get_centerofmass(const vector<Atom>& atoms, const vector<double>& mass) {
 
-	double massges=0;
-	#pragma omp parallel for reduction(+:massges)
-	for(int i=0; i<atoms.size();++i) {
-		massges += mass[i];
-	}
-
+	double massges=0.0;
 	double rx = 0.0;
 	double ry = 0.0;
 	double rz = 0.0;
 
-	#pragma omp parallel for reduction(+:rx,ry,rz)
+	#pragma omp parallel for reduction(+:rx,ry,rz,massges)
 	for(int i=0; i<atoms.size(); ++i) {
+		massges += mass[i];
 		rx += mass[i] * atoms[i].pos[0];
 		ry += mass[i] * atoms[i].pos[1];
 		rz += mass[i] * atoms[i].pos[2];
@@ -115,7 +113,23 @@ tuple<double, double, double> get_centerofmass(const vector<Atom>& atoms, const 
 	ry /= massges;
 	rz /= massges;
 
-	return make_tuple(rx, ry, rz);
+	return array<double,3> {rx,ry,rz};
+}
+
+void shift_to_com(vector<Atom>& sys_one, vector<Atom>& sys_two, const array<double,3>& com_one, const array<double,3>& com_two) {
+
+	int natoms=sys_one.size();
+
+	#pragma omp parallel for
+	for(int i=0;i<natoms;++i) {
+		sys_one[i].pos[0] -= get<0>(com_one);
+		sys_one[i].pos[1] -= get<1>(com_one);
+		sys_one[i].pos[2] -= get<2>(com_one);
+
+		sys_two[i].pos[0] -= get<0>(com_two);
+		sys_two[i].pos[1] -= get<1>(com_two);
+		sys_two[i].pos[2] -= get<2>(com_two);
+	}
 }
 
 std::vector<Atom> quaternion(const std::vector<Atom>& sys_one, const std::vector<Atom>& sys_two) {
@@ -125,15 +139,14 @@ std::vector<Atom> quaternion(const std::vector<Atom>& sys_one, const std::vector
 	// ********************************************************************
 
 	int natoms=sys_one.size();
-	array<array<double,3>,3> R;
+	Matrix3d R=Matrix3d::Zero();
 
 	for(int i=0;i<3;++i) {
-	  for(int j=0;j<3;++j) {
-		  R[i][j] = 0.0;
-		  for(int k=0;k<natoms;++k) {
-			  R[i][j] += sys_one[k].pos[i] * sys_two[k].pos[j];
-		  }
-	  }
+		for(int j=0;j<3;++j) {
+			for(int k=0;k<natoms;++k) {
+				R(i,j) += sys_one[k].pos[i] * sys_two[k].pos[j];
+			}
+		}
 	}
 
 	// ********************************************************************
@@ -141,32 +154,32 @@ std::vector<Atom> quaternion(const std::vector<Atom>& sys_one, const std::vector
 	// ********************************************************************
 
 
-	Eigen::Matrix4d F;
-	F(0,0) = R[0][0] + R[1][1] + R[2][2];
-	F(0,1) = R[1][2] - R[2][1];
-	F(0,2) = R[2][0] - R[0][2];
-	F(0,3) = R[0][1] - R[1][0];
+	Matrix4d F;
+	F(0,0) = R(0,0) + R(1,1) + R(2,2);
+	F(0,1) = R(1,2) - R(2,1);
+	F(0,2) = R(2,0) - R(0,2);
+	F(0,3) = R(0,1) - R(1,0);
 
 	F(1,0) = F(0,1);
-	F(1,1) = R[0][0] - R[1][1] - R[2][2];
-	F(1,2) = R[0][1] + R[1][0];
-	F(1,3) = R[0][2] + R[2][0];
+	F(1,1) = R(0,0) - R(1,1) - R(2,2);
+	F(1,2) = R(0,1) + R(1,0);
+	F(1,3) = R(0,2) + R(2,0);
 
 	F(2,0) = F(0,2);
 	F(2,1) = F(1,2);
-	F(2,2) = -R[0][0] + R[1][1] - R[2][2];
-	F(2,3) = R[1][2] + R[2][1];
+	F(2,2) = -R(0,0) + R(1,1) - R(2,2);
+	F(2,3) = R(1,2) + R(2,1);
 
 	F(3,0) = F(0,3);
 	F(3,1) = F(1,3);
 	F(3,2) = F(2,3);
-	F(3,3) = -R[0][0] - R[1][1] + R[2][2];
+	F(3,3) = -R(0,0) - R(1,1) + R(2,2);
 
 	// ********************************************************************
 	// DIAGONALIZING THE F-MATRIX                                   *******
 	// ********************************************************************
 
-	Eigen::SelfAdjointEigenSolver<Eigen::Matrix4d> solver(4);
+	Eigen::SelfAdjointEigenSolver<Matrix4d> solver(4);
 	solver.compute(F);
 	auto evecs = solver.eigenvectors();
 
@@ -181,7 +194,7 @@ std::vector<Atom> quaternion(const std::vector<Atom>& sys_one, const std::vector
 	// https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation#Quaternion-derived_rotation_matrix
 	// ********************************************************************
 
-	Eigen::Matrix3d U;
+	Matrix3d U;
 	//U(0,0) = q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3];
 	U(0,0) = 1 - 2 * (q[2] * q[2] + q[3] * q[3]);
 	U(0,1) = 2 * (q[1] * q[2] - q[0] * q[3]);
@@ -206,6 +219,7 @@ std::vector<Atom> quaternion(const std::vector<Atom>& sys_one, const std::vector
 	// ********************************************************************
 
 	vector<Atom> sys_one_aligned(natoms);
+
 	#pragma omp parallel for
 	for(int i=0;i<natoms;++i) {
 	  sys_one_aligned[i].symbx = sys_one[i].symbx;
@@ -224,11 +238,10 @@ std::vector<Atom> Kabsch(const std::vector<Atom>& sys_one, const std::vector<Ato
 	// SET UP H-MATRIX												*******
 	// ********************************************************************
 	int natoms = sys_one.size();
-	Eigen::Matrix3d H;
+	Matrix3d H = Matrix3d::Zero();
 
 	for(int i=0;i<3;++i) {
 		for(int j=0;j<3;++j) {
-			H(i,j) = 0.0;
 			for(int k=0;k<natoms;++k) {
 				H(i,j) += sys_one[k].pos[i] * sys_two[k].pos[j];
 			}
@@ -239,14 +252,14 @@ std::vector<Atom> Kabsch(const std::vector<Atom>& sys_one, const std::vector<Ato
 	// Build Rotation Matrix									    *******
 	// ********************************************************************
 
-	Eigen::JacobiSVD<Eigen::Matrix3d> svd(H, Eigen::ComputeFullU | Eigen::ComputeFullV);
+	Eigen::JacobiSVD<Matrix3d> svd(H, Eigen::ComputeFullU | Eigen::ComputeFullV);
 	auto d=(svd.matrixV()*(svd.matrixU().transpose())).determinant();
 	d=sgn(d);
 
-	Eigen::Matrix3d tmp;
+	Matrix3d tmp;
 	tmp << 1,0,0,0,1,0,0,0,d;
 
-	Eigen::Matrix3d R = svd.matrixV()*tmp*(svd.matrixU().transpose());
+	Matrix3d R = svd.matrixV()*tmp*(svd.matrixU().transpose());
 
 	// ********************************************************************
 	// TRANSFORMING COORDINATES OF x-SET                            *******
@@ -268,24 +281,16 @@ std::vector<Atom> Kabsch(const std::vector<Atom>& sys_one, const std::vector<Ato
 double calc_rmsd(const std::vector<Atom>& sys_one_aligned, const std::vector<Atom>& sys_two) {
 
 	int natoms=sys_one_aligned.size();
-	vector<double> delta(natoms,0.0);
 	double sumdelta = 0.0;
-	double rmsd = 0.0;
-
-	#pragma omp parallel for
-	for(int i=0;i<natoms;++i) {
-	  for(int k=0;k<3;++k)
-		  delta[i] += (sys_one_aligned[i].pos[k] - sys_two[i].pos[k]) * (sys_one_aligned[i].pos[k] - sys_two[i].pos[k]); // distance^2
-	}
 
 	#pragma omp parallel for reduction(+:sumdelta)
-	for(int i=0; i<natoms; i++) {
-	  sumdelta +=delta[i];
+	for(int i=0;i<natoms;++i) {
+	  for(int k=0;k<3;++k)
+		  sumdelta += (sys_one_aligned[i].pos[k] - sys_two[i].pos[k]) * (sys_one_aligned[i].pos[k] - sys_two[i].pos[k]); // distance^2
 	}
 
 	sumdelta /= natoms;
-	rmsd = sqrt(sumdelta);
-	return rmsd;
+	return sqrt(sumdelta);
 }
 
 
